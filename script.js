@@ -41,8 +41,6 @@ const overlay = document.querySelector(".overlay");
 const modal = document.querySelector(".modal");
 const answer = document.querySelector(".answermodal");
 const wORl = document.querySelector(".Win_or_Loss");
-
-console.log(guessedWord);
 // Announcement of changes⬆️
 
 // Write a letter
@@ -59,29 +57,72 @@ function addLetter(letter) {
 }
 // Functionality for enter
 const enter = function () {
-  console.log(word);
-  // add keyboard coloring
-  // redo the logic of the orange color
-  for (let i = 0; i < word.length; i++) {
-    if (word[i] === guessedWord[i]) {
-      document
-        .querySelectorAll(".line")
-        [line].children[i].classList.add("green");
-    } else if (guessedWord.includes(word[i])) {
-      document
-        .querySelectorAll(".line")
-        [line].children[i].classList.add("orange");
-    } else if (!guessedWord.includes(word[i])) {
-      document
-        .querySelectorAll(".line")
-        [line].children[i].classList.add("grey");
+  const rowTiles = document.querySelectorAll(".line")[line].children;
+  const guessArray = word.split("");
+  const solutionArray = guessedWord.split("");
+
+  const state = Array(5).fill("grey");
+
+  for (let i = 0; i < 5; i++) {
+    if (guessArray[i] === solutionArray[i]) {
+      state[i] = "green";
+      solutionArray[i] = null;
     }
   }
-  if (line < 5) {
-    line++;
+  for (let i = 0; i < 5; i++) {
+    if (state[i] === "green") continue;
+
+    const targetIndex = solutionArray.indexOf(guessArray[i]);
+    if (targetIndex !== -1) {
+      state[i] = "orange";
+      solutionArray[targetIndex] = null;
+    }
   }
+
+  for (let i = 0; i < 5; i++) {
+    rowTiles[i].classList.remove("grey", "orange");
+    rowTiles[i].classList.add(state[i]);
+
+    const letter = guessArray[i].toUpperCase();
+    const keyButton = document.querySelector(`.${letter}`);
+    if (keyButton) {
+      if (keyButton.classList.contains("green")) {
+        continue;
+      } else if (state[i] === "green") {
+        keyButton.classList.remove("grey", "orange");
+        keyButton.classList.add("green");
+      } else if (state[i] === "orange") {
+        keyButton.classList.remove("grey");
+        keyButton.classList.add("orange");
+      } else if (!keyButton.classList.contains("orange")) {
+        keyButton.classList.add("grey");
+      }
+    }
+  }
+
+  if (line < 5) line++;
   count = 0;
 };
+function submitWord() {
+  // Functionality win
+  if (word === guessedWord) {
+    win = true;
+    enter();
+    gameStop = true;
+    openModal();
+    return;
+  }
+  // Functionality loss
+  if (word !== guessedWord && line === 5) {
+    win = false;
+    enter();
+    gameStop = true;
+    openModal();
+    return;
+  }
+  enter();
+  word = "";
+}
 // Backspace functionality
 const backspace = function () {
   if (count > 0) {
@@ -90,14 +131,28 @@ const backspace = function () {
       document.querySelectorAll(".line")[line].children[count];
     writeLetter.textContent = " ";
     word = word.slice(0, -1);
-    console.log(word);
   }
 };
 
 // New game functionality
-// add functionality
 const newGame = function () {
-  console.log("New game");
+  line = 0;
+  count = 0;
+  word = "";
+  win = false;
+  gameStop = false;
+  guessedWord = words[Math.trunc(Math.random() * words.length)];
+  // clear
+  const allWordElement = document.querySelectorAll(".word");
+  for (let i = 0; i < allWordElement.length; i++) {
+    allWordElement[i].textContent = "";
+    allWordElement[i].classList.remove("grey", "orange", "green");
+  }
+  const allBtnElement = document.querySelectorAll(".btn");
+  for (let i = 0; i < allBtnElement.length; i++) {
+    allBtnElement[i].classList.remove("grey", "orange", "green");
+  }
+  closeModal();
 };
 
 // Close modal
@@ -132,27 +187,7 @@ document.addEventListener("keydown", function (e) {
     } else if (e.key === "Backspace") backspace();
     else if (e.key === "Escape") closeModal();
     else if (e.key === "Enter" && count === 5) {
-      // Functionality win
-      if (word === guessedWord) {
-        win = true;
-        gameStop = true;
-        openModal();
-      }
-      // Functionality loss
-      // prettier-ignore
-      const line5 = document.querySelectorAll(".line")[5].textContent.replace(/\s/g, '').toLowerCase();
-      console.log(`mmm = ${line5}`);
-      if (line >= 5 && !(line5 === guessedWord)) {
-        win = false;
-        openModal();
-      }
-      if (line === 5) {
-        gameStop = true;
-      }
-
-      enter();
-
-      word = "";
+      submitWord();
     }
   }
 });
@@ -168,11 +203,7 @@ keyboard.addEventListener("click", function (e) {
       addLetter(letterDown);
     } else if (e.target.closest(".backspace")) backspace();
     else if (letterDown === "enter" && count === 5) {
-      enter();
-      if (word === guessedWord) {
-        openModal();
-      }
-      word = "";
+      submitWord();
     }
   }
   if (letterDown === "new game") newGame();

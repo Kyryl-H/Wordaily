@@ -81,11 +81,11 @@ button {
   font-size: 1.5rem;
 }
 
-.line .orange {
-  background-color: orange;
-}
 .line .green {
   background-color: green;
+}
+.line .orange {
+  background-color: orange;
 }
 .line .grey {
   background-color: gray;
